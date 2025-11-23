@@ -1,27 +1,9 @@
 import streamlit as st
 import pandas as pd
-import sys
-import os
 from datetime import datetime, timedelta
 import random
-
-# Add utils to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
-
-# Try to import our utils, but provide fallbacks if they fail
-try:
-    from utils.data_loader import load_data_from_csv
-    from utils.visualizations import (
-        create_lead_score_histogram,
-        create_lead_source_pie,
-        create_clv_segment_box,
-        create_churn_histogram,
-        create_performance_trend
-    )
-    UTILS_AVAILABLE = True
-except ImportError as e:
-    st.warning(f"Utils module not available: {e}. Using fallback functions.")
-    UTILS_AVAILABLE = False
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Page configuration
 st.set_page_config(
@@ -60,8 +42,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Fallback data generation if utils are not available
-def generate_sample_data_fallback():
+def generate_sample_data():
     """Generate realistic sample data for the B2B AI dashboard"""
     random.seed(42)
     
@@ -102,76 +83,15 @@ def generate_sample_data_fallback():
     
     return pd.DataFrame(leads), pd.DataFrame(customers)
 
-# Fallback visualization functions
-def create_lead_score_histogram_fallback(leads_df):
-    """Create lead score distribution histogram"""
-    import plotly.express as px
-    fig = px.histogram(
-        leads_df, 
-        x='lead_score',
-        title='Lead Score Distribution',
-        nbins=20,
-        color_discrete_sequence=['#1f77b4']
-    )
-    fig.update_layout(xaxis_title='Lead Score', yaxis_title='Count')
-    return fig
-
-def create_lead_source_pie_fallback(leads_df):
-    """Create lead source distribution pie chart"""
-    import plotly.express as px
-    lead_source_counts = leads_df['lead_source'].value_counts()
-    fig = px.pie(
-        values=lead_source_counts.values,
-        names=lead_source_counts.index,
-        title='Lead Source Distribution'
-    )
-    return fig
-
-def create_clv_segment_box_fallback(customers_df):
-    """Create CLV distribution by segment box plot"""
-    import plotly.express as px
-    fig = px.box(
-        customers_df,
-        x='segment',
-        y='clv_predicted',
-        title='CLV Distribution by Customer Segment',
-        color='segment'
-    )
-    fig.update_layout(yaxis_title='Predicted CLV (₹)')
-    return fig
-
-def create_churn_histogram_fallback(customers_df):
-    """Create churn probability distribution histogram"""
-    import plotly.express as px
-    fig = px.histogram(
-        customers_df,
-        x='churn_probability',
-        title='Customer Churn Probability Distribution',
-        nbins=20,
-        color_discrete_sequence=['#ff4444']
-    )
-    return fig
-
 def main():
     # Header
     st.markdown('<h1 class="main-header">🏢 Crompton B2B AI Command Center</h1>', unsafe_allow_html=True)
     
-    try:
-        # Load data
-        if UTILS_AVAILABLE:
-            leads_df, customers_df = load_data_from_csv()
-        else:
-            leads_df, customers_df = generate_sample_data_fallback()
-            st.info("📊 Using generated sample data for demonstration.")
-        
-        # Display dashboard
-        display_dashboard(leads_df, customers_df)
-        
-    except Exception as e:
-        st.error(f"Error loading application: {e}")
-        st.info("The app will run with basic generated data.")
-        leads_df, customers_df = generate_sample_data_fallback()
-        display_dashboard(leads_df, customers_df)
+    # Load data
+    leads_df, customers_df = generate_sample_data()
+    
+    # Display dashboard
+    display_dashboard(leads_df, customers_df)
 
 def display_dashboard(leads_df, customers_df):
     """Main dashboard display function"""
@@ -233,18 +153,24 @@ def display_dashboard(leads_df, customers_df):
         
         with col1:
             # Lead score distribution
-            if UTILS_AVAILABLE:
-                fig_score = create_lead_score_histogram(filtered_leads)
-            else:
-                fig_score = create_lead_score_histogram_fallback(filtered_leads)
+            fig_score = px.histogram(
+                filtered_leads, 
+                x='lead_score',
+                title='Lead Score Distribution',
+                nbins=20,
+                color_discrete_sequence=['#1f77b4']
+            )
+            fig_score.update_layout(xaxis_title='Lead Score', yaxis_title='Count')
             st.plotly_chart(fig_score, use_container_width=True)
         
         with col2:
             # Lead source analysis
-            if UTILS_AVAILABLE:
-                fig_source = create_lead_source_pie(filtered_leads)
-            else:
-                fig_source = create_lead_source_pie_fallback(filtered_leads)
+            lead_source_counts = filtered_leads['lead_source'].value_counts()
+            fig_source = px.pie(
+                values=lead_source_counts.values,
+                names=lead_source_counts.index,
+                title='Lead Source Distribution'
+            )
             st.plotly_chart(fig_source, use_container_width=True)
         
         # Hot leads table
@@ -266,18 +192,28 @@ def display_dashboard(leads_df, customers_df):
         
         with col1:
             # CLV by segment
-            if UTILS_AVAILABLE:
-                fig_clv = create_clv_segment_box(filtered_customers)
-            else:
-                fig_clv = create_clv_segment_box_fallback(filtered_customers)
+            fig_clv = px.box(
+                filtered_customers,
+                x='segment',
+                y='clv_predicted',
+                title='CLV Distribution by Customer Segment',
+                color='segment'
+            )
+            fig_clv.update_layout(yaxis_title='Predicted CLV (₹)')
             st.plotly_chart(fig_clv, use_container_width=True)
         
         with col2:
             # Churn probability distribution
-            if UTILS_AVAILABLE:
-                fig_churn = create_churn_histogram(filtered_customers)
-            else:
-                fig_churn = create_churn_histogram_fallback(filtered_customers)
+            fig_churn = px.histogram(
+                filtered_customers,
+                x='churn_probability',
+                title='Customer Churn Probability Distribution',
+                nbins=20,
+                color_discrete_sequence=['#ff4444']
+            )
+            # Add vertical line for high risk threshold
+            fig_churn.add_vline(x=0.7, line_dash="dash", line_color="red", 
+                              annotation_text="High Risk Threshold", annotation_position="top right")
             st.plotly_chart(fig_churn, use_container_width=True)
         
         # High-value customers table
@@ -304,29 +240,35 @@ def display_dashboard(leads_df, customers_df):
                 (filtered_leads['status'].isin(['New', 'Contacted']))
             ].head(5)
             
-            for _, lead in priority_leads.iterrows():
-                st.markdown(f"""
-                <div class="alert-high">
-                    <strong>{lead['company']}</strong> - {lead['industry']}<br>
-                    Score: {lead['lead_score']} | Contact: {lead['contact_title']}<br>
-                    <em>Action: Assign to sales rep immediately</em>
-                </div>
-                """, unsafe_allow_html=True)
-                st.write("")
+            if len(priority_leads) > 0:
+                for _, lead in priority_leads.iterrows():
+                    st.markdown(f"""
+                    <div class="alert-high">
+                        <strong>{lead['company']}</strong> - {lead['industry']}<br>
+                        Score: {lead['lead_score']} | Contact: {lead['contact_title']}<br>
+                        <em>Action: Assign to sales rep immediately</em>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.write("")
+            else:
+                st.info("No priority hot leads at the moment.")
         
         with col2:
             st.markdown("### ⚠️ High Churn Risk Customers")
             risk_customers = filtered_customers[filtered_customers['churn_probability'] > 0.7].head(5)
             
-            for _, customer in risk_customers.iterrows():
-                st.markdown(f"""
-                <div class="alert-medium">
-                    <strong>{customer['company']}</strong> - {customer['segment']}<br>
-                    Churn Risk: {customer['churn_probability']:.0%}<br>
-                    <em>Action: Proactive retention outreach</em>
-                </div>
-                """, unsafe_allow_html=True)
-                st.write("")
+            if len(risk_customers) > 0:
+                for _, customer in risk_customers.iterrows():
+                    st.markdown(f"""
+                    <div class="alert-medium">
+                        <strong>{customer['company']}</strong> - {customer['segment']}<br>
+                        Churn Risk: {customer['churn_probability']:.0%}<br>
+                        <em>Action: Proactive retention outreach</em>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.write("")
+            else:
+                st.info("No high churn risk customers at the moment.")
     
     with tab4:
         st.subheader("📊 Marketing Performance Analytics")
@@ -339,7 +281,6 @@ def display_dashboard(leads_df, customers_df):
         col1, col2 = st.columns(2)
         
         with col1:
-            import plotly.graph_objects as go
             fig_conversion = go.Figure()
             fig_conversion.add_trace(go.Scatter(
                 x=months, y=conversion_rates,
