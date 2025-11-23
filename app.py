@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import random
-import plotly.express as px
-import plotly.graph_objects as go
 
 # Page configuration
 st.set_page_config(
@@ -152,26 +150,15 @@ def display_dashboard(leads_df, customers_df):
         col1, col2 = st.columns(2)
         
         with col1:
-            # Lead score distribution
-            fig_score = px.histogram(
-                filtered_leads, 
-                x='lead_score',
-                title='Lead Score Distribution',
-                nbins=20,
-                color_discrete_sequence=['#1f77b4']
-            )
-            fig_score.update_layout(xaxis_title='Lead Score', yaxis_title='Count')
-            st.plotly_chart(fig_score, use_container_width=True)
+            # Lead score distribution using Streamlit's native chart
+            st.write("**Lead Score Distribution**")
+            st.bar_chart(filtered_leads['lead_score'].value_counts().sort_index())
         
         with col2:
-            # Lead source analysis
+            # Lead source analysis using Streamlit's native chart
+            st.write("**Lead Source Distribution**")
             lead_source_counts = filtered_leads['lead_source'].value_counts()
-            fig_source = px.pie(
-                values=lead_source_counts.values,
-                names=lead_source_counts.index,
-                title='Lead Source Distribution'
-            )
-            st.plotly_chart(fig_source, use_container_width=True)
+            st.dataframe(lead_source_counts)
         
         # Hot leads table
         st.subheader("🔥 Hot Leads (Score ≥ 80)")
@@ -191,30 +178,20 @@ def display_dashboard(leads_df, customers_df):
         col1, col2 = st.columns(2)
         
         with col1:
-            # CLV by segment
-            fig_clv = px.box(
-                filtered_customers,
-                x='segment',
-                y='clv_predicted',
-                title='CLV Distribution by Customer Segment',
-                color='segment'
-            )
-            fig_clv.update_layout(yaxis_title='Predicted CLV (₹)')
-            st.plotly_chart(fig_clv, use_container_width=True)
+            # CLV by segment using Streamlit's native chart
+            st.write("**CLV by Customer Segment**")
+            segment_clv = filtered_customers.groupby('segment')['clv_predicted'].mean()
+            st.bar_chart(segment_clv)
         
         with col2:
             # Churn probability distribution
-            fig_churn = px.histogram(
-                filtered_customers,
-                x='churn_probability',
-                title='Customer Churn Probability Distribution',
-                nbins=20,
-                color_discrete_sequence=['#ff4444']
-            )
-            # Add vertical line for high risk threshold
-            fig_churn.add_vline(x=0.7, line_dash="dash", line_color="red", 
-                              annotation_text="High Risk Threshold", annotation_position="top right")
-            st.plotly_chart(fig_churn, use_container_width=True)
+            st.write("**Churn Risk Distribution**")
+            st.bar_chart(filtered_customers['churn_probability'].value_counts().sort_index())
+            
+            # High risk indicator
+            high_risk_count = len(filtered_customers[filtered_customers['churn_probability'] > 0.7])
+            if high_risk_count > 0:
+                st.error(f"🚨 {high_risk_count} customers at high churn risk!")
         
         # High-value customers table
         st.subheader("💎 High-Value Customers (Platinum & Gold)")
@@ -281,34 +258,33 @@ def display_dashboard(leads_df, customers_df):
         col1, col2 = st.columns(2)
         
         with col1:
-            fig_conversion = go.Figure()
-            fig_conversion.add_trace(go.Scatter(
-                x=months, y=conversion_rates,
-                mode='lines+markers',
-                name='Conversion Rate',
-                line=dict(color='#2ecc71', width=3)
-            ))
-            fig_conversion.update_layout(
-                title='Lead Conversion Rate Trend (%)',
-                xaxis_title='Month',
-                yaxis_title='Conversion Rate %'
-            )
-            st.plotly_chart(fig_conversion, use_container_width=True)
+            st.write("**Lead Conversion Rate Trend (%)**")
+            conversion_data = pd.DataFrame({
+                'Month': months,
+                'Conversion Rate': conversion_rates
+            })
+            st.line_chart(conversion_data.set_index('Month'))
         
         with col2:
-            fig_cycle = go.Figure()
-            fig_cycle.add_trace(go.Scatter(
-                x=months, y=sales_cycle,
-                mode='lines+markers',
-                name='Sales Cycle (Months)',
-                line=dict(color='#e74c3c', width=3)
-            ))
-            fig_cycle.update_layout(
-                title='Average Sales Cycle Length (Months)',
-                xaxis_title='Month',
-                yaxis_title='Months'
-            )
-            st.plotly_chart(fig_cycle, use_container_width=True)
+            st.write("**Average Sales Cycle Length (Months)**")
+            cycle_data = pd.DataFrame({
+                'Month': months,
+                'Sales Cycle': sales_cycle
+            })
+            st.line_chart(cycle_data.set_index('Month'))
+        
+        # Performance summary
+        st.subheader("📈 Performance Summary")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Current Conversion Rate", "9.2%", "+1.7%")
+        
+        with col2:
+            st.metric("Current Sales Cycle", "10.2 months", "-1.8 months")
+        
+        with col3:
+            st.metric("ROI Improvement", "22%", "+22%")
     
     # Footer
     st.markdown("---")
