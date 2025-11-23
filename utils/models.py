@@ -1,35 +1,15 @@
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
+import random
 
 class B2BPredictiveModels:
     """Mock ML models for B2B lead scoring and CLV prediction"""
     
     def __init__(self):
         self.lead_scoring_model = None
-        self.clv_model = None
         
-    def train_lead_scoring_model(self, X, y):
-        """Train a lead scoring classification model"""
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
-        self.lead_scoring_model = RandomForestClassifier(n_estimators=100, random_state=42)
-        self.lead_scoring_model.fit(X_train, y_train)
-        
-        # Predict and evaluate
-        y_pred = self.lead_scoring_model.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
-        
-        return accuracy, classification_report(y_test, y_pred)
-    
     def predict_lead_score(self, lead_data):
         """Predict lead score for new data"""
-        if self.lead_scoring_model is None:
-            # Return mock scores for demo
-            return np.random.randint(20, 95)
-        return self.lead_scoring_model.predict_proba(lead_data)[0][1] * 100
+        # Return mock scores for demo
+        return random.randint(20, 95)
     
     def calculate_clv(self, customer_data):
         """Calculate Customer Lifetime Value"""
