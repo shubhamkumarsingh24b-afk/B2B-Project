@@ -1,6 +1,5 @@
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
 
 def create_lead_score_histogram(leads_df):
     """Create lead score distribution histogram"""
@@ -45,7 +44,6 @@ def create_churn_histogram(customers_df):
         nbins=20,
         color_discrete_sequence=['#ff4444']
     )
-    fig.add_vline(x=0.7, line_dash="dash", line_color="red", annotation_text="High Risk Threshold")
     return fig
 
 def create_performance_trend(months, values, title, y_axis_title, color):
