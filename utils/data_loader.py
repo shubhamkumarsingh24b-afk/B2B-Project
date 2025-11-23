@@ -1,11 +1,10 @@
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 import random
 
 def generate_sample_data():
     """Generate realistic sample data for the B2B AI dashboard"""
-    np.random.seed(42)
+    random.seed(42)
     
     # Lead data
     industries = ['Hospitality', 'Real Estate', 'Corporate', 'Healthcare', 'Education']
@@ -20,11 +19,10 @@ def generate_sample_data():
             'industry': random.choice(industries),
             'lead_source': random.choice(lead_sources),
             'contact_title': random.choice(job_titles),
-            'lead_score': np.random.randint(10, 95),
-            'engagement_level': np.random.choice(['High', 'Medium', 'Low'], p=[0.3, 0.5, 0.2]),
-            'last_activity': datetime.now() - timedelta(days=np.random.randint(1, 90)),
-            'status': np.random.choice(['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Closed-Won', 'Closed-Lost'], 
-                                     p=[0.2, 0.3, 0.2, 0.15, 0.1, 0.05])
+            'lead_score': random.randint(10, 95),
+            'engagement_level': random.choice(['High', 'Medium', 'Low']),
+            'last_activity': datetime.now() - timedelta(days=random.randint(1, 90)),
+            'status': random.choice(['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Closed-Won', 'Closed-Lost'])
         }
         leads.append(lead)
     
@@ -35,12 +33,11 @@ def generate_sample_data():
             'id': f'CUST{i:04d}',
             'company': f'Existing Client {i+1}',
             'industry': random.choice(industries),
-            'total_spent': np.random.randint(500000, 5000000),
-            'clv_predicted': np.random.randint(1000000, 10000000),
-            'churn_probability': np.random.uniform(0.1, 0.8),
-            'segment': np.random.choice(['Platinum', 'Gold', 'Silver', 'Bronze'], 
-                                      p=[0.1, 0.3, 0.4, 0.2]),
-            'last_purchase': datetime.now() - timedelta(days=np.random.randint(1, 365))
+            'total_spent': random.randint(500000, 5000000),
+            'clv_predicted': random.randint(1000000, 10000000),
+            'churn_probability': round(random.uniform(0.1, 0.8), 2),
+            'segment': random.choice(['Platinum', 'Gold', 'Silver', 'Bronze']),
+            'last_purchase': datetime.now() - timedelta(days=random.randint(1, 365))
         }
         customers.append(customer)
     
@@ -53,8 +50,10 @@ def load_data_from_csv():
         customers_df = pd.read_csv('data/sample_customers.csv')
         
         # Convert date columns
-        leads_df['last_activity'] = pd.to_datetime(leads_df['last_activity'])
-        customers_df['last_purchase'] = pd.to_datetime(customers_df['last_purchase'])
+        if 'last_activity' in leads_df.columns:
+            leads_df['last_activity'] = pd.to_datetime(leads_df['last_activity'])
+        if 'last_purchase' in customers_df.columns:
+            customers_df['last_purchase'] = pd.to_datetime(customers_df['last_purchase'])
         
         return leads_df, customers_df
     except FileNotFoundError:
